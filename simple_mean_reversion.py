@@ -65,7 +65,7 @@ def rsi(df, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-class MeanReversionBBRSIStrategy:
+class SimpleMeanReversion:
     """
     Mean Reversion Strategy using Bollinger Bands + RSI:
     - Buy if price < Lower Band AND RSI(5) < 30
@@ -288,7 +288,7 @@ def main():
 
     try:
         # Initialize strategy
-        strategy = SimpleStrategy(
+        strategy = SimpleMeanReversion(
             api_key=API_KEY,
             secret_key=SECRET_KEY,
             passphrase=PASSPHRASE,
