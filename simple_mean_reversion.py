@@ -83,7 +83,7 @@ class SimpleMeanReversion:
         self.trade_value = 200              # Trade value in quote currency
         self.bb_period = 20
         self.bb_std = 2
-        self.rsi_period = 5
+        self.rsi_period = 14
         self.interval = "15m"
         self.limit = self.bb_period * 2
         self.sleep = 60
@@ -175,21 +175,20 @@ class SimpleMeanReversion:
         curr_lower = lower_band.iloc[-1]
         curr_rsi = rsi_series.iloc[-1]
 
-        self.logger_strategy.info(
-            f"Price={curr_price}, BB=({curr_lower:.2f}, {curr_upper:.2f}), RSI={curr_rsi:.2f}"
-        )
-
         if curr_price is None or np.isnan(curr_price) or np.isnan(curr_rsi):
             return 0
         
         alpha_factor = (curr_rsi - 50) / 10_000
-        curr_lower = curr_lower * (1 + alpha_factor)
-        curr_upper = curr_upper * (1 + alpha_factor)
+        adj_price = curr_price * (1 + alpha_factor)
+
+        self.logger_strategy.info(
+            f"Price={curr_price}, BB=({curr_lower:.2f}, {curr_upper:.2f}), RSI={curr_rsi:.2f}"
+        )
 
         # Entry / Exit rules
-        if curr_price < curr_lower and curr_rsi < 30:
+        if adj_price < curr_lower and curr_rsi < 30:
             return 1  # BUY
-        elif curr_price > curr_upper and curr_rsi > 70:
+        elif adj_price > curr_upper and curr_rsi > 70:
             return -1  # SELL
         return 0
 
@@ -220,11 +219,11 @@ class SimpleMeanReversion:
                 order_id = order_result.get('data', {}).get('orderId', 'N/A')
                 self.lastest_pos = 1 if side == "BUY" else -1
                 self.logger_strategy.info(
-                    f"✅ {side} order placed successfully, ID={order_id}, Qty={quantity:.6f}"
+                    f"{side} order placed successfully, ID={order_id}, Qty={quantity:.6f}"
                 )
                 return True
             else:
-                self.logger_strategy.error(f"❌ Failed to place order: {order_result}")
+                self.logger_strategy.error(f"Failed to place order: {order_result}")
                 return False
 
         except Exception as e:
@@ -233,7 +232,7 @@ class SimpleMeanReversion:
 
     def logic(self):
         signal = self.get_signal()
-        self.logger_strategy.info(f"Signal: {signal}")
+        # self.logger_strategy.info(f"Signal: {signal}")
 
         if signal == 0 or signal == self.lastest_pos:
             return False
@@ -248,14 +247,14 @@ class SimpleMeanReversion:
         return False
 
     def run_strategy(self):
-        self.logger_strategy.info("🚀 Starting BB + RSI Mean Reversion Strategy...")
+        self.logger_strategy.info("Starting BB + RSI Mean Reversion Strategy...")
         try:
             while not self.stop_flag:
                 executed = self.logic()
-                if executed:
-                    self.logger_strategy.info("Trade executed successfully")
-                else:
-                    self.logger_strategy.info("No trade executed this cycle")
+                # if executed:
+                #     self.logger_strategy.info("Trade executed successfully")
+                # else:
+                #     self.logger_strategy.info("No trade executed this cycle")
                 time.sleep(self.sleep)
         except Exception as e:
             self.logger_strategy.error(f"Strategy error: {e} _ {e.__traceback__.tb_lineno}")
